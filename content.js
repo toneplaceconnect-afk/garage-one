@@ -50,9 +50,12 @@
     var g = c.global || {}, h = c.hero || {};
 
     // Шапка и бренд
-    qa('footer .brand').forEach(function (el) { if (g.brand) el.innerHTML = brandHTML(g.brand); });
-    var mark = q('.auto-logo-mark');
-    if (mark && g.brand) { var w = String(g.brand).split(' '); mark.textContent = (w[0] ? w[0][0] : 'G') + (w[1] ? w[1][0] : '1'); }
+    if (g.brand) {
+      var w = String(g.brand).split(' ');
+      var ini = (w[0] ? w[0][0] : 'G') + (w[1] ? w[1][0] : 'O');
+      qa('.auto-logo-mark').forEach(function (m) { m.textContent = ini; });
+      qa('.brand-text').forEach(function (el) { el.innerHTML = brandHTML(g.brand); });
+    }
     var phone = q('header .auto-phone');
     if (phone && g.phone) { phone.href = 'tel:+' + String(g.phone).replace(/\D/g, ''); if (g.phoneFormatted) phone.textContent = g.phoneFormatted; }
     qa('.mobilebar a[href^="tel:"]').forEach(function (a) { if (g.phone) a.href = 'tel:+' + String(g.phone).replace(/\D/g, ''); });

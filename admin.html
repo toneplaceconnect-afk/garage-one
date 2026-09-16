@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Админ-панель — GARAGE ONE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:#0b0d0f;color:#c9ccd6;min-height:100vh}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:22px}
+.login-box{background:#111417;border:1px solid #293036;border-radius:8px;padding:36px 32px;width:100%;max-width:380px;text-align:center}
+.login-box h1{font-size:16px;color:#fff;margin-bottom:8px;letter-spacing:.08em}
+.login-box h1 b{color:#ff6a1a}
+.login-box p{font-size:11px;color:#717785;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 14px;border:1px solid #3a3d4a;border-radius:4px;background:#080a0c;color:#fff;font-size:13px;margin-bottom:16px;outline:none}
+.login-box input:focus{border-color:#ff6a1a}
+.login-box button{width:100%;padding:12px;border:0;border-radius:4px;background:#ff6a1a;color:#111;font-size:12px;font-weight:700;cursor:pointer}
+.login-box button:hover{filter:brightness(1.1)}
+.login-box .error{color:#ff6a1a;font-size:11px;margin-top:8px;display:none}
+.admin{display:none;padding:20px;max-width:960px;margin:0 auto}
+.admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #293036}
+.admin-header h1{font-size:14px;color:#fff}
+.admin-header .logout{background:none;border:1px solid #3a3d4a;color:#8d92a3;padding:6px 14px;border-radius:4px;font-size:11px;cursor:pointer}
+.admin-header .logout:hover{border-color:#ff6a1a;color:#fff}
+.tabs{display:flex;gap:4px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}
+.tab{padding:8px 16px;border:1px solid #293036;border-radius:4px;background:#111417;color:#8d92a3;font-size:11px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab:hover{border-color:#ff6a1a;color:#fff}
+.tab.active{background:#ff6a1a;border-color:#ff6a1a;color:#111;font-weight:700}
+.panel{display:none}
+.panel.active{display:block}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8d92a3;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1px solid #293036;border-radius:4px;background:#080a0c;color:#fff;font-size:13px;outline:none;font-family:inherit}
+.field input:focus,.field textarea:focus{border-color:#ff6a1a}
+.field textarea{min-height:80px;resize:vertical}
+.field .hint{font-size:10px;color:#717785;margin-top:4px}
+.section-title{font-size:12px;font-weight:700;color:#ff6a1a;margin:24px 0 12px;padding-bottom:6px;border-bottom:1px solid #293036}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.img-card{position:relative;background:#111417;border:1px solid #293036;border-radius:4px;overflow:hidden;aspect-ratio:4/3}
+.img-card img{width:100%;height:100%;object-fit:cover}
+.img-card .remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.7);color:#ff6a1a;border:0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.img-card .remove:hover{background:#ff6a1a;color:#111}
+.drop-zone{border:2px dashed #3a3d4a;border-radius:6px;padding:24px;text-align:center;color:#717785;font-size:11px;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.dragover{border-color:#ff6a1a;color:#ff6a1a}
+.drop-zone input{display:none}
+.array-item{background:#111417;border:1px solid #293036;border-radius:4px;padding:14px;margin-bottom:10px;position:relative}
+.array-item .remove-item{position:absolute;top:8px;right:8px;background:none;border:1px solid #3a3d4a;color:#8d92a3;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer}
+.array-item .remove-item:hover{border-color:#ff6a1a;color:#ff6a1a}
+.add-item{background:none;border:1px dashed #3a3d4a;color:#8d92a3;padding:8px;border-radius:4px;font-size:11px;cursor:pointer;width:100%;margin-bottom:16px}
+.add-item:hover{border-color:#ff6a1a;color:#ff6a1a}
+.save-bar{position:sticky;bottom:0;background:#0b0d0f;border-top:1px solid #293036;padding:14px 0;margin-top:24px;display:flex;gap:12px;align-items:center}
+.save-btn{padding:10px 28px;border:0;border-radius:4px;background:#ff6a1a;color:#111;font-size:12px;font-weight:700;cursor:pointer}
+.save-btn:hover{filter:brightness(1.1)}
+.save-btn:disabled{opacity:.5;cursor:wait}
+.save-status{font-size:11px;color:#717785}
+.save-status.ok{color:#52d273}
+.save-status.err{color:#ff6a1a}
+@media(max-width:600px){
+  .admin{padding:12px}
+  .tab{padding:6px 10px;font-size:10px}
+  .img-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <h1>GARAGE <b>ONE</b></h1>
+    <p>Админ-панель управления контентом</p>
+    <input type="password" id="password" placeholder="Пароль" autofocus>
+    <button onclick="doLogin()">Войти</button>
+    <div class="error" id="loginError">Неверный пароль</div>
+  </div>
+</div>
+
+<div class="admin" id="adminPanel">
+  <div class="admin-header">
+    <h1>Админ-панель</h1>
+    <button class="logout" onclick="doLogout()">Выйти</button>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+  <div class="save-bar">
+    <button class="save-btn" id="saveBtn" onclick="doSave()">Сохранить</button>
+    <span class="save-status" id="saveStatus"></span>
+  </div>
+</div>
+
+<script>
+let token = '';
+let content = null;
+let fileSha = '';
+let currentTab = 'global';
+
+const PAGES = [
+  { id: 'global', label: 'Глобальное' },
+  { id: 'hero', label: 'Шапка и видео' },
+  { id: 'services', label: 'Услуги' },
+  { id: 'diagnosis', label: 'Диагностика' },
+  { id: 'calculator', label: 'Калькулятор' },
+  { id: 'photos', label: 'Фото до/после' },
+  { id: 'trust', label: 'Доверие и этапы' },
+  { id: 'booking', label: 'Запись' }
+];
+
+async function api(action, body, method = 'POST') {
+  const opts = { method, headers: {} };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  let url = '/api/admin-cms?action=' + action;
+  if (method === 'POST') {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body || { action });
+  }
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+async function doLogin() {
+  const pw = document.getElementById('password').value;
+  if (!pw) return;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  try {
+    const res = await api('auth', { password: pw });
+    if (!res.ok) {
+      errEl.textContent = res.error || 'Неверный пароль';
+      errEl.style.display = 'block';
+      return;
+    }
+    token = res.token;
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    await loadContent();
+  } catch (e) {
+    errEl.textContent = 'Нет связи с сервером (админка работает на деплое Vercel, не из файла): ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  token = '';
+  content = null;
+  document.getElementById('adminPanel').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('password').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+
+async function loadContent() {
+  const res = await api('content', null, 'GET');
+  if (res.error) { alert(res.error); return; }
+  content = res.content;
+  fileSha = res.sha;
+  renderTabs();
+  renderPanel(currentTab);
+}
+
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = PAGES.map(p => `<div class="tab${p.id === currentTab ? ' active' : ''}" onclick="switchTab('${p.id}')">${p.label}</div>`).join('');
+}
+
+function switchTab(id) {
+  currentTab = id;
+  renderTabs();
+  renderPanel(id);
+}
+
+function renderPanel(id) {
+  const el = document.getElementById('panels');
+  const pages = { global: renderGlobal, hero: renderHero, services: renderServices, diagnosis: renderDiagnosis, calculator: renderCalculator, photos: renderPhotos, trust: renderTrust, booking: renderBooking };
+  el.innerHTML = `<div class="panel active" id="panel-${id}">${(pages[id] || (() => ''))()}</div>`;
+  bindDropZones();
+}
+
+function field(key, label, value, type, hint) {
+  type = type || 'input';
+  const id = 'f-' + key.replace(/\./g, '-');
+  const h = hint ? `<div class="hint">${hint}</div>` : '';
+  if (type === 'textarea') return `<div class="field"><label>${label}</label><textarea id="${id}" data-key="${key}">${esc(value || '')}</textarea>${h}</div>`;
+  return `<div class="field"><label>${label}</label><input id="${id}" data-key="${key}" value="${esc(value || '')}">${h}</div>`;
+}
+
+function imgGrid(key, images) {
+  const imgs = Array.isArray(images) ? images : (images ? [images] : []);
+  return `<div class="img-grid" data-key="${key}">${imgs.map((src, i) => `
+    <div class="img-card">
+      <img src="${src}" alt="">
+      <button class="remove" onclick="removeImage('${key}',${i})">×</button>
+    </div>`).join('')}</div>`;
+}
+
+function dropZone(key, label) {
+  return `<div class="drop-zone" data-key="${key}" data-accept="image">${label || 'Перетащите фото или нажмите для выбора'}<input type="file" accept="image/*" multiple></div>`;
+}
+
+function dropZoneVideo(key) {
+  return `<div class="drop-zone" data-key="${key}" data-accept="video">Перетащите .mp4 (до 20 МБ) или нажмите для выбора<input type="file" accept="video/mp4,video/webm"></div>`;
+}
+
+function arraySection(key, items, fields, label) {
+  let html = `<div class="section-title">${label}</div>`;
+  (items || []).forEach((item, i) => {
+    html += `<div class="array-item"><button class="remove-item" onclick="removeArrayItem('${key}',${i})">Удалить</button>`;
+    fields.forEach(f => {
+      const val = (typeof item === 'string') ? (f.key === 'v' ? item : '') : (item[f.key] || '');
+      html += field(`${key}.${i}.${f.key}`, f.label, val, f.type || 'input', f.hint || '');
+    });
+    html += `</div>`;
+  });
+  html += `<button class="add-item" onclick="addArrayItem('${key}',${JSON.stringify(fields.map(f => f.key)).replace(/"/g, '&quot;')})">+ Добавить</button>`;
+  return html;
+}
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+function renderGlobal() {
+  const g = content.global || {};
+  return `<div class="section-title">Контакты и бренд</div>
+    ${field('global.brand', 'Название (последнее слово — оранжевым)', g.brand)}
+    ${field('global.phone', 'Телефон для ссылок (только цифры с кодом)', g.phone)}
+    ${field('global.phoneFormatted', 'Телефон для показа', g.phoneFormatted)}
+    ${field('global.footerAbout', 'О сайте в футере', g.footerAbout, 'textarea')}
+    ${field('global.address', 'Адрес и часы (каждая строка с новой строки)', g.address, 'textarea')}`;
+}
+
+function renderHero() {
+  const h = content.hero || {};
+  return `<div class="section-title">Тексты шапки</div>
+    ${field('hero.eyebrow', 'Надзаголовок', h.eyebrow)}
+    ${field('hero.title', 'Заголовок', h.title, 'textarea', 'Каждая строка с новой строки')}
+    ${field('hero.text', 'Подзаголовок', h.text, 'textarea')}
+    ${field('hero.cta1_text', 'Кнопка 1 текст', h.cta1_text)}
+    ${field('hero.cta1_href', 'Кнопка 1 ссылка', h.cta1_href)}
+    ${field('hero.cta2_text', 'Кнопка 2 текст', h.cta2_text)}
+    ${field('hero.cta2_href', 'Кнопка 2 ссылка', h.cta2_href)}
+    <div class="section-title">Фоновое видео (во всю ширину)</div>
+    ${field('hero.video', 'Путь к видео', h.video, 'input', 'Файл лежит в assets/. Новое видео — загрузите ниже, путь подставится сам.')}
+    ${dropZoneVideo('hero.video')}
+    <div class="section-title">Постер (обложка видео)</div>
+    ${field('hero.poster', 'Путь к постеру', h.poster)}
+    ${imgGrid('hero.poster', h.poster ? [h.poster] : [])}
+    ${dropZone('hero.poster')}
+    ${arraySection('hero.stats', h.stats, [
+      { key: 'v', label: 'Цифра' },
+      { key: 'l', label: 'Подпись' }
+    ], 'Цифры под кнопками')}`;
+}
+
+function renderServices() {
+  const s = content.services || {};
+  return `<div class="section-title">Заголовок блока</div>
+    ${field('services.title', 'Заголовок', s.title, 'textarea', 'Каждая строка с новой строки')}
+    ${field('services.text', 'Подзаголовок', s.text, 'textarea')}
+    ${arraySection('services.items', s.items, [
+      { key: 't', label: 'Название услуги' },
+      { key: 'd', label: 'Описание', type: 'textarea' }
+    ], 'Услуги (номер присваивается автоматически)'}`;
+}
+
+function renderDiagnosis() {
+  const d = content.diagnosis || {};
+  return `<div class="section-title">Заголовок блока</div>
+    ${field('diagnosis.title', 'Заголовок', d.title, 'textarea')}
+    ${field('diagnosis.text', 'Подзаголовок', d.text, 'textarea')}
+    ${arraySection('diagnosis.symptoms', d.symptoms, [
+      { key: 'n', label: 'Симптом' },
+      { key: 'p', label: 'Цена (например «от 1 500 ₽»)' }
+    ], 'Симптомы')}
+    <div class="section-title">Панель оценки</div>
+    ${field('diagnosis.aside_small', 'Мелкая подпись', d.aside_small)}
+    ${field('diagnosis.aside_default', 'Текст по умолчанию', d.aside_default)}
+    ${field('diagnosis.aside_note', 'Примечание', d.aside_note, 'textarea')}
+    ${field('diagnosis.aside_cta', 'Кнопка', d.aside_cta)}`;
+}
+
+function renderCalculator() {
+  const c = content.calculator || {};
+  return `<div class="section-title">Заголовок блока</div>
+    ${field('calculator.title', 'Заголовок', c.title, 'textarea')}
+    ${field('calculator.text', 'Подзаголовок', c.text, 'textarea')}
+    ${field('calculator.total_label', 'Подпись итога', c.total_label)}
+    ${arraySection('calculator.serviceOpts', c.serviceOpts, [
+      { key: 'v', label: 'Цена, ₽ (только число)', hint: 'Менять осторожно — влияет на расчёт' },
+      { key: 'l', label: 'Название услуги' }
+    ], 'Услуги калькулятора')}
+    ${arraySection('calculator.carOpts', c.carOpts, [
+      { key: 'v', label: 'Коэффициент (например 1.25)' },
+      { key: 'l', label: 'Класс авто' }
+    ], 'Классы авто')}
+    ${arraySection('calculator.urgencyOpts', c.urgencyOpts, [
+      { key: 'v', label: 'Коэффициент' },
+      { key: 'l', label: 'Срочность' }
+    ], 'Срочность')}`;
+}
+
+function renderPhotos() {
+  const w = content.works || {};
+  return `<div class="section-title">Заголовок блока</div>
+    ${field('works.title', 'Заголовок', w.title, 'textarea')}
+    ${field('works.text', 'Подзаголовок', w.text, 'textarea')}
+    <div class="section-title">Фото «ДО» (первое — главное)</div>
+    ${imgGrid('works.before', w.before)}
+    ${dropZone('works.before')}
+    <div class="section-title">Фото «ПОСЛЕ» (первое — главное)</div>
+    ${imgGrid('works.after', w.after)}
+    ${dropZone('works.after')}`;
+}
+
+function renderTrust() {
+  const t = content.trust || {}, p = content.process || {};
+  return `${arraySection('trust.items', t.items, [
+      { key: 'v', label: 'Значение' },
+      { key: 'l', label: 'Подпись' }
+    ], 'Блок доверия')}
+    <div class="section-title">Этапы работы</div>
+    ${field('process.title', 'Заголовок', p.title, 'textarea')}
+    ${arraySection('process.steps', p.steps, [
+      { key: 't', label: 'Название этапа' },
+      { key: 'd', label: 'Описание', type: 'textarea' }
+    ], 'Этапы (нумерация автоматическая)')}`;
+}
+
+function renderBooking() {
+  const b = content.booking || {};
+  return `<div class="section-title">Блок записи</div>
+    ${field('booking.eyebrow', 'Надзаголовок', b.eyebrow)}
+    ${field('booking.title', 'Заголовок', b.title, 'textarea')}
+    ${field('booking.text', 'Подзаголовок', b.text, 'textarea')}
+    ${field('booking.services_placeholder', 'Первый пункт списка', b.services_placeholder)}
+    ${field('booking.submit', 'Кнопка', b.submit)}
+    ${arraySection('booking.services', (b.services || []).map(s => ({ v: typeof s === 'string' ? s : s.v })), [
+      { key: 'v', label: 'Услуга в списке' }
+    ], 'Услуги в форме записи')}`;
+}
+
+function removeImage(key, index) {
+  if (!confirm('Удалить фото?')) return;
+  const parts = key.split('.');
+  let obj = content;
+  for (let i = 0; i < parts.length; i++) obj = obj[parts[i]];
+  if (Array.isArray(obj)) obj.splice(index, 1);
+  else if (typeof obj === 'string') {
+    let parent = content;
+    for (let i = 0; i < parts.length - 1; i++) parent = parent[parts[i]];
+    parent[parts[parts.length - 1]] = '';
+  }
+  renderPanel(currentTab);
+}
+
+function removeArrayItem(key, index) {
+  if (!confirm('Удалить элемент?')) return;
+  const parts = key.split('.');
+  let obj = content;
+  for (let i = 0; i < parts.length; i++) obj = obj[parts[i]];
+  if (Array.isArray(obj)) obj.splice(index, 1);
+  renderPanel(currentTab);
+}
+
+function addArrayItem(key, fieldKeys) {
+  const parts = key.split('.');
+  let obj = content;
+  for (let i = 0; i < parts.length; i++) { if (!obj[parts[i]]) obj[parts[i]] = []; obj = obj[parts[i]]; }
+  const item = {};
+  fieldKeys.forEach(f => item[f] = '');
+  obj.push(item);
+  renderPanel(currentTab);
+}
+
+function setByKey(key, value) {
+  const parts = key.split('.');
+  let obj = content;
+  for (let i = 0; i < parts.length - 1; i++) { if (!obj[parts[i]]) obj[parts[i]] = {}; obj = obj[parts[i]]; }
+  obj[parts[parts.length - 1]] = value;
+}
+
+async function uploadFile(file) {
+  const base64 = await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+  const r = await fetch('/api/admin-cms?action=upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ action: 'upload', filename: file.name, data: base64 })
+  });
+  return r.json();
+}
+
+function bindDropZones() {
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    const input = zone.querySelector('input');
+    const accept = zone.dataset.accept || 'image';
+    zone.onclick = () => input.click();
+    zone.ondragover = e => { e.preventDefault(); zone.classList.add('dragover'); };
+    zone.ondragleave = () => zone.classList.remove('dragover');
+    zone.ondrop = e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files, zone.dataset.key, accept); };
+    input.onchange = e => handleFiles(e.target.files, zone.dataset.key, accept);
+  });
+}
+
+async function handleFiles(files, targetKey, accept) {
+  for (const file of files) {
+    if (accept === 'video' && file.size > 20 * 1024 * 1024) { alert('Видео больше 20 МБ: ' + file.name); continue; }
+    const res = await uploadFile(file);
+    if (res.ok && res.url) {
+      if (accept === 'video') {
+        setByKey(targetKey, res.url);
+      } else {
+        const parts = targetKey.split('.');
+        let obj = content;
+        for (let i = 0; i < parts.length; i++) { if (!obj[parts[i]]) obj[parts[i]] = []; obj = obj[parts[i]]; }
+        if (!Array.isArray(obj)) {
+          let parent = content;
+          for (let i = 0; i < parts.length - 1; i++) parent = parent[parts[i]];
+          parent[parts[parts.length - 1]] = [obj];
+          obj = parent[parts[parts.length - 1]];
+        }
+        obj.push(res.url);
+      }
+    } else {
+      alert('Ошибка загрузки: ' + (res.error || ''));
+    }
+  }
+  renderPanel(currentTab);
+}
+
+function collectForm() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    if (el.classList.contains('drop-zone')) return;
+    const parts = key.split('.');
+    let obj = content;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (obj[parts[i]] === undefined || obj[parts[i]] === null) obj[parts[i]] = {};
+      obj = obj[parts[i]];
+    }
+    obj[parts[parts.length - 1]] = el.value;
+  });
+}
+
+async function doSave() {
+  const btn = document.getElementById('saveBtn');
+  const status = document.getElementById('saveStatus');
+  btn.disabled = true;
+  status.textContent = 'Сохранение...';
+  status.className = 'save-status';
+  collectForm();
+  try {
+    const res = await api('save', { content, sha: fileSha });
+    btn.disabled = false;
+    if (res.ok) {
+      fileSha = res.sha || fileSha;
+      status.textContent = 'Сохранено! Vercel задеплоит через 1-2 минуты.';
+      status.className = 'save-status ok';
+    } else {
+      status.textContent = 'Ошибка: ' + (res.error || 'неизвестная');
+      status.className = 'save-status err';
+    }
+  } catch (e) {
+    btn.disabled = false;
+    status.textContent = 'Ошибка сети: ' + e.message;
+    status.className = 'save-status err';
+  }
+}
+</script>
+</body>
+</html>
